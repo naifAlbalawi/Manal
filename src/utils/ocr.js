@@ -7,8 +7,7 @@ export async function extractTextFromImage(file) {
 
 export function parseItemsFromText(text) {
   if (!text) return [];
-  const lines = text.split(/
-/);
+  const lines = text.split("\n");
   const items = [];
   for (const line of lines) {
     const match = line.match(/(.+?)[:\s]+(\d+[.,]?\d*)/);
