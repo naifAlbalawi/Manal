@@ -1,15 +1,13 @@
+import { useState, useEffect } from "react";
+
 const dict = {
   en: {
-    // App
     appName: "AMAL", appNameAr: "أمل", tagline: "Your Life, Optimized",
-    // Navigation
     dashboard: "Home", expenses: "Expenses", invoices: "Invoices", 
     fleet: "Fleet", groceries: "Groceries", settings: "Settings",
-    more: "More Services",
-    // Actions
+    more: "More Services", assets: "Assets", houseMap: "House Map",
     add: "Add", save: "Save", cancel: "Cancel", delete: "Delete", 
     edit: "Edit", confirm: "Confirm", remove: "Remove", done: "Done",
-    // Fields
     name: "Name", nameAr: "Name (Arabic)", amount: "Amount", 
     price: "Price", cost: "Cost", total: "Total",
     startDate: "Start Date", endDate: "End Date", days: "Days", 
@@ -18,11 +16,9 @@ const dict = {
     search: "Search", filter: "Filter", sort: "Sort",
     list: "List", board: "Board", timeline: "Timeline", 
     grid: "Grid", today: "Today",
-    // Expense
     uploadImage: "Upload Image", extractedText: "Extracted Text",
     parsedItems: "Parsed Items", addAsExpense: "Add as Expense",
     addAllItems: "Add All", noItems: "No items found",
-    // Settings
     currency: "Currency", language: "Language", 
     arabic: "العربية", english: "English",
     export: "Export", import: "Import", reset: "Reset Data",
@@ -31,19 +27,16 @@ const dict = {
     color: "Color", statuses: "Statuses", commaSeparated: "comma separated",
     addTag: "Add Category", addOption: "Add Option",
     optionNameEn: "Name (English)", optionNameAr: "Name (Arabic)",
-    // Properties / Parents
     properties: "Properties", property: "Property",
     newProperty: "New Property", propertyName: "Property Name",
     propertyNumber: "Property Number", linkToParent: "Link to Property",
     expensesLinked: "Linked Expenses",
-    // Status
     urgent: "Urgent", upcoming: "Upcoming", overview: "Overview",
     low: "Low", ok: "OK", good: "Good", worn: "Worn", 
     damaged: "Damaged", retired: "Retired",
     service: "Service", fuel: "Fuel", annual: "Annual", repair: "Repair",
     fixed: "Fixed", variable: "Variable", subscription: "Subscription",
     oneTime: "One-time", investment: "Investment", savings: "Savings",
-    // AI
     aiEnhance: "AI Enhancement", useAI: "Use AI",
     aiSettings: "AI Settings", enableAI: "Enable AI",
     aiProvider: "Provider", customEndpoint: "Custom Endpoint",
@@ -53,7 +46,6 @@ const dict = {
     bearer: "Bearer", custom: "Custom", saveAI: "Save AI Config",
     aiSaved: "AI configuration saved", aiDisabled: "AI is disabled",
     testAI: "Test AI", processing: "Processing...",
-    // Invoice
     invoiceName: "Invoice Name", generatedName: "Auto-generated",
     linkToInvoice: "Link to Invoice", searchInvoice: "Search invoice...",
     noEndDate: "No end date", includeInTimeline: "Include in timeline",
@@ -62,22 +54,17 @@ const dict = {
     changeGroup: "Change group", editItem: "Edit Item",
     itemGroup: "Item Group", invoiceImage: "Invoice Image",
     tapToView: "Tap to view",
-    // Attachment
     attachment: "Attachment", attachInvoice: "Attach Document",
     attachmentName: "Attachment Name", attachmentNumber: "Attachment #",
     uploadAttachment: "Upload Attachment", attached: "Attached",
-    // Empty states
     noExpenses: "No expenses yet", noParents: "No properties yet",
     noInvoices: "No invoices yet", noItems: "No items",
-    // Misc
     items: "items", perMonth: "/mo", deleteConfirm: "Delete this?",
     version: "AMAL v4.0", back: "Back", all: "All",
-    // Dashboard
     monthlySpend: "Monthly Spend", activeItems: "Active Items",
     upcomingEvents: "Upcoming", budgetHealth: "Budget Health",
     quickActions: "Quick Actions", recentActivity: "Recent Activity",
     seeAll: "See All", welcomeBack: "Welcome back",
-    // Fleet
     fleetOverview: "Fleet Overview", addCar: "Add Car",
     carName: "Car Name", plateNumber: "Plate Number",
     vinNumber: "VIN", mileage: "Mileage",
@@ -88,18 +75,39 @@ const dict = {
     expiryDate: "Expiry Date", renew: "Renew",
     insurance: "Insurance", registration: "Registration",
     inspection: "Inspection", ownership: "Ownership",
-    // Groceries
     groceryList: "Grocery List", addItem: "Add Item",
     quantity: "Qty", unit: "Unit", store: "Store",
     optimize: "Optimize", bestPrice: "Best Price",
     totalSavings: "Total Savings", shoppingRoute: "Shopping Route",
     comparePrices: "Compare Prices", suggestedStores: "Suggested Stores",
+    asset: "Asset", newAsset: "New Asset",
+    assetName: "Asset Name", assetType: "Asset Type",
+    room: "Room", rooms: "Rooms",
+    createMap: "Create Map", floorPlan: "Floor Plan",
+    maintenance: "Maintenance", installment: "Installment",
+    warranty: "Warranty", warrantyUntil: "Warranty Until",
+    plumbing: "Plumbing", electrical: "Electrical", hvac: "HVAC",
+    appliance: "Appliance", furniture: "Furniture",
+    registerAsset: "Register Asset", linkedAssets: "Linked Assets",
+    subscriptions: "Subscriptions", subscription: "Subscription",
+    newSubscription: "New Subscription", recurring: "Recurring",
+    quickAdd: "Quick Add", addQuickExpense: "Add Quick Expense",
+    quickExpenseName: "Quick Expense Name", frequency: "Frequency",
+    daily: "Daily", weekly: "Weekly", biweekly: "Bi-weekly",
+    monthly: "Monthly", yearly: "Yearly",
+    lastUsed: "Last Used", useCount: "Use Count",
+    budget: "Budget", monthlyBudget: "Monthly Budget",
+    budgetLimit: "Budget Limit", remainingBudget: "Remaining Budget",
+    overBudget: "Over Budget", setBudget: "Set Budget",
+    budgetWarning: "Budget Warning",
+    pinToFooter: "Pin to Footer", unpinFromFooter: "Unpin from Footer",
+    footerSlots: "Footer Slots", selectServices: "Select Services",
   },
   ar: {
     appName: "AMAL", appNameAr: "أمل", tagline: "حياتك، محسّنة",
     dashboard: "الرئيسية", expenses: "المصروفات", invoices: "الفواتير",
     fleet: "المركبات", groceries: "المشتريات", settings: "الإعدادات",
-    more: "خدمات إضافية",
+    more: "خدمات إضافية", assets: "الأصول", houseMap: "خريطة المنزل",
     add: "إضافة", save: "حفظ", cancel: "إلغاء", delete: "حذف",
     edit: "تعديل", confirm: "تأكيد", remove: "إزالة", done: "تم",
     name: "الاسم", nameAr: "الاسم (عربي)", amount: "المبلغ",
@@ -174,16 +182,45 @@ const dict = {
     optimize: "تحسين", bestPrice: "أفضل سعر",
     totalSavings: "إجمالي التوفير", shoppingRoute: "مسار التسوق",
     comparePrices: "مقارنة الأسعار", suggestedStores: "المتاجر المقترحة",
+    asset: "أصل", newAsset: "أصل جديد",
+    assetName: "اسم الأصل", assetType: "نوع الأصل",
+    room: "غرفة", rooms: "الغرف",
+    createMap: "إنشاء خريطة", floorPlan: "مخطط الطابق",
+    maintenance: "صيانة", installment: "تركيب",
+    warranty: "ضمان", warrantyUntil: "الضمان حتى",
+    plumbing: "سباكة", electrical: "كهرباء", hvac: "تكييف",
+    appliance: "أجهزة", furniture: "أثاث",
+    registerAsset: "تسجيل أصل", linkedAssets: "الأصول المرتبطة",
+    subscriptions: "اشتراكات", subscription: "اشتراك",
+    newSubscription: "اشتراك جديد", recurring: "متكرر",
+    quickAdd: "إضافة سريعة", addQuickExpense: "إضافة مصروف سريع",
+    quickExpenseName: "اسم المصروف السريع", frequency: "التكرار",
+    daily: "يومي", weekly: "أسبوعي", biweekly: "نصف شهري",
+    monthly: "شهري", yearly: "سنوي",
+    lastUsed: "آخر استخدام", useCount: "عدد الاستخدامات",
+    budget: "ميزانية", monthlyBudget: "الميزانية الشهرية",
+    budgetLimit: "حد الميزانية", remainingBudget: "المتبقي من الميزانية",
+    overBudget: "تجاوز الميزانية", setBudget: "تحديد الميزانية",
+    budgetWarning: "تحذير الميزانية",
+    pinToFooter: "تثبيت في الشريط السفلي", unpinFromFooter: "إلغاء التثبيت",
+    footerSlots: "أماكن الشريط السفلي", selectServices: "اختر الخدمات",
   }
 };
 
 let currentLang = "en";
+const listeners = new Set();
+
+export function subscribe(callback) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
 
 export function setLang(l) {
   currentLang = l;
   document.documentElement.lang = l;
   document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
   try { localStorage.setItem("amal_lang", l); } catch(e) {}
+  listeners.forEach(cb => cb(l));
 }
 
 export function loadLang() {
@@ -201,3 +238,12 @@ export function t(key) {
 
 export function getLang() { return currentLang; }
 export function isRTL() { return currentLang === "ar"; }
+
+// React hook for language changes
+export function useLang() {
+  const [lang, setLangState] = useState(currentLang);
+  useEffect(() => {
+    return subscribe((newLang) => setLangState(newLang));
+  }, []);
+  return lang;
+}

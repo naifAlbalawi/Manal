@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useApp, MODULES } from "../context/AppContext";
 import { t, isRTL } from "../utils/i18n";
-import { Link } from "react-router-dom";
 
 function Card({ children, style = {}, onClick, accent }) {
   return (
@@ -34,38 +33,38 @@ function Card({ children, style = {}, onClick, accent }) {
 function StatCard({ label, value, subtext, color, icon, delay }) {
   return (
     <Card accent={color} style={{ animationDelay: `${delay}ms` }} className="animate-fade-in-up">
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 14,
-          background: color + "18",
+          width: 36, height: 36, borderRadius: 12,
+          background: `linear-gradient(135deg, ${color}22, ${color}08)`,
+          border: `1px solid ${color}22`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20,
+          fontSize: 18,
         }}>
           {icon}
         </div>
-        <span style={{
-          fontSize: 11, color: "#606070", fontWeight: 600,
-          background: "rgba(255,255,255,0.03)", padding: "4px 10px", borderRadius: 8,
-        }}>{label}</span>
+        <div style={{ fontSize: 12, color: "#606070", fontWeight: 500 }}>{label}</div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: "#f0f0f5", marginBottom: 4, letterSpacing: "-0.5px" }}>
-        {value}
-      </div>
-      <div style={{ fontSize: 12, color: "#606070" }}>{subtext}</div>
+      <div style={{ fontSize: 32, fontWeight: 800, color: "#f0f0f5", letterSpacing: "-0.5px" }}>{value}</div>
+      <div style={{ fontSize: 12, color: "#505060", marginTop: 4 }}>{subtext}</div>
     </Card>
   );
 }
 
-function ModuleCard({ mod, index }) {
+function ModuleCard({ mod, index, onClick }) {
   const rtl = isRTL();
-  const expenseCount = mod.id === "expenses" ? useApp().state.expenses.length :
-                       mod.id === "fleet" ? (useApp().state.fleet?.cars?.length || 0) :
-                       mod.id === "invoices" ? useApp().state.invoices.length :
-                       mod.id === "groceries" ? (useApp().state.groceries?.lists?.length || 0) : 0;
+  const { state } = useApp();
+  const expenseCount = mod.id === "expenses" ? state.expenses.length :
+                       mod.id === "fleet" ? (state.fleet?.cars?.length || 0) :
+                       mod.id === "invoices" ? state.invoices.length :
+                       mod.id === "groceries" ? (state.groceries?.lists?.length || 0) :
+                       mod.id === "assets" ? (state.assets?.items?.length || 0) :
+                       mod.id === "houseMap" ? (state.houseMap?.rooms?.length || 0) : 0;
 
   return (
     <Card 
       accent={mod.color}
+      onClick={onClick}
       style={{ animationDelay: `${300 + index * 80}ms` }}
       className="animate-fade-in-up"
     >
@@ -81,6 +80,8 @@ function ModuleCard({ mod, index }) {
           {mod.icon === "Car" && "🚗"}
           {mod.icon === "ShoppingCart" && "🛒"}
           {mod.icon === "Receipt" && "🧾"}
+          {mod.icon === "Box" && "📦"}
+          {mod.icon === "Map" && "🗺️"}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f5", marginBottom: 2 }}>
@@ -99,7 +100,6 @@ function ModuleCard({ mod, index }) {
           →
         </div>
       </div>
-      {/* Mini sparkline placeholder */}
       <div style={{ marginTop: 14, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.03)", overflow: "hidden" }}>
         <div style={{
           width: `${40 + Math.random() * 50}%`, height: "100%", borderRadius: 2,
@@ -110,49 +110,57 @@ function ModuleCard({ mod, index }) {
   );
 }
 
-export default function Dashboard() {
-  const { state, currency, monthly, TODAY } = useApp();
+export default function Dashboard({ setPage }) {
+  const { state, currency, monthly, TODAY, budgetUsed } = useApp();
   const rtl = isRTL();
 
-  const urgentCount = useMemo(() => 
+  const urgentCount = useMemo(() =>
     state.expenses.filter(e => e.endDate && daysBetween(TODAY, e.endDate) <= 7).length,
   [state.expenses, TODAY]);
 
   const activeCount = state.expenses.length;
+  const budgetHealth = state.budget?.limit > 0 
+    ? Math.max(0, 100 - budgetUsed) 
+    : 92;
 
   return (
     <div style={{ padding: "8px 0 24px" }}>
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "1fr 1fr", 
+        gap: 12, 
+        marginBottom: 20 
+      }}>
         <StatCard 
-          label={t("monthlySpend")}
-          value={`${currency}${monthly.toFixed(0)}`}
+          label={t("monthlySpend")} 
+          value={`${currency}${monthly.toFixed(0)}`} 
           subtext={t("perMonth")}
           color="#6366f1"
           icon="💰"
           delay={0}
         />
         <StatCard 
-          label={t("activeItems")}
-          value={activeCount}
+          label={t("activeItems")} 
+          value={activeCount} 
           subtext={t("tracking")}
           color="#10b981"
           icon="📊"
           delay={80}
         />
         <StatCard 
-          label={t("upcomingEvents")}
-          value={urgentCount}
+          label={t("upcomingEvents")} 
+          value={urgentCount} 
           subtext={t("urgent")}
           color={urgentCount > 0 ? "#f43f5e" : "#f59e0b"}
           icon="⏰"
           delay={160}
         />
         <StatCard 
-          label={t("budgetHealth")}
-          value="92%"
-          subtext={t("good")}
-          color="#22d3ee"
+          label={t("budgetHealth")} 
+          value={`${budgetHealth}%`} 
+          subtext={budgetHealth > 80 ? "Good" : budgetHealth > 50 ? "OK" : "Warning"}
+          color={budgetHealth > 80 ? "#10b981" : budgetHealth > 50 ? "#f59e0b" : "#f43f5e"}
           icon="❤️"
           delay={240}
         />
@@ -165,24 +173,22 @@ export default function Dashboard() {
         </div>
         <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="hide-scrollbar">
           {[
-            { label: t("add") + " " + t("expenses"), color: "#6366f1", icon: "+", action: "expenses" },
-            { label: t("add") + " " + t("fleet"), color: "#f59e0b", icon: "+", action: "fleet" },
-            { label: t("add") + " " + t("groceries"), color: "#10b981", icon: "+", action: "groceries" },
-            { label: t("invoices"), color: "#f43f5e", icon: "🧾", action: "invoices" },
+            { label: t("add") + " " + t("expenses"), color: "#6366f1", icon: "+", page: "expenses" },
+            { label: t("add") + " " + t("fleet"), color: "#f59e0b", icon: "+", page: "fleet" },
+            { label: t("add") + " " + t("groceries"), color: "#10b981", icon: "+", page: "groceries" },
+            { label: t("invoices"), color: "#f43f5e", icon: "🧾", page: "invoices" },
           ].map((action, i) => (
-            <button key={i} style={{
+            <button key={i} onClick={() => setPage(action.page)} style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "12px 18px", borderRadius: 16,
-              background: color + "12",
+              background: action.color + "12",
               border: `1px solid ${action.color}22`,
-              color: "#f0f0f5", fontSize: 13, fontWeight: 600,
-              whiteSpace: "nowrap", cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = action.color + "20"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = action.color + "12"; }}
-            >
-              <span style={{ color: action.color }}>{action.icon}</span>
+              color: action.color,
+              fontSize: 13, fontWeight: 600,
+              whiteSpace: "nowrap", transition: "all 0.2s",
+              cursor: "pointer", flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 16 }}>{action.icon}</span>
               {action.label}
             </button>
           ))}
@@ -191,12 +197,15 @@ export default function Dashboard() {
 
       {/* Modules Grid */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t("overview")}</h2>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 14 }}>{t("overview")}</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {MODULES.map((mod, i) => (
-            <ModuleCard key={mod.id} mod={mod} index={i} />
+            <ModuleCard 
+              key={mod.id} 
+              mod={mod} 
+              index={i} 
+              onClick={() => setPage(mod.route)}
+            />
           ))}
         </div>
       </div>
@@ -205,43 +214,42 @@ export default function Dashboard() {
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t("recentActivity")}</h2>
-          <span style={{ fontSize: 12, color: "#6366f1", fontWeight: 600, cursor: "pointer" }}>{t("seeAll")}</span>
+          <button onClick={() => setPage("expenses")} style={{ fontSize: 12, color: "#6366f1", background: "none" }}>{t("seeAll")}</button>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {state.expenses.slice(-5).reverse().map((exp, i) => {
             const tag = state.tags.find(t => t.id === exp.tag);
             return (
               <div key={exp.id} style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "14px 16px", borderRadius: 16,
-                background: "rgba(255,255,255,0.02)",
+                background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.04)",
-                animationDelay: `${500 + i * 60}ms`,
+                animationDelay: `${i * 40}ms`,
               }} className="animate-fade-in-up">
                 <div style={{
-                  width: 36, height: 36, borderRadius: 12,
-                  background: (tag?.color || "#6366f1") + "18",
+                  width: 36, height: 36, borderRadius: 10,
+                  background: (tag?.color || "#6366f1") + "15",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14,
+                  fontSize: 14, color: tag?.color || "#6366f1",
                 }}>
                   {tag?.icon || "◆"}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {exp.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#606070" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#f0f0f5" }}>{exp.name}</div>
+                  <div style={{ fontSize: 11, color: "#505060", marginTop: 2 }}>
                     {rtl ? tag?.nameAr : tag?.name} · {exp.date || exp.startDate}
                   </div>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: tag?.color || "#f0f0f5" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f5" }}>
                   {currency}{exp.amount}
                 </div>
               </div>
             );
           })}
           {state.expenses.length === 0 && (
-            <div style={{ textAlign: "center", color: "#404050", padding: 32, fontSize: 14 }}>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#505060" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
               {t("noExpenses")}
             </div>
           )}
