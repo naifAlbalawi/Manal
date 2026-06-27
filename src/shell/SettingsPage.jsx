@@ -43,7 +43,7 @@ function BottomSheet({ open, onClose, title, children }) {
         background: "linear-gradient(180deg, #1a1a24, #0a0a0f)",
         borderRadius: "28px 28px 0 0",
         borderTop: "1px solid rgba(255,255,255,0.08)",
-        padding: "24px 20px calc(40px + env(safe-area-inset-bottom))",
+        padding: "24px 20px calc(20px + env(safe-area-inset-bottom))",
         animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         maxHeight: "80vh", overflow: "auto",
       }}>
@@ -56,13 +56,19 @@ function BottomSheet({ open, onClose, title, children }) {
 }
 
 export default function SettingsPage() {
-  const { state, setSettings, resetData, showToast, setBudget, setPinnedServices } = useApp();
+  const { state, setSettings, resetData, showToast, setBudget, setPinnedServices, updateTag, removeTag } = useApp();
   const rtl = isRTL();
   const [showCurrency, setShowCurrency] = useState(false);
   const [budgetSheetOpen, setBudgetSheetOpen] = useState(false);
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [tagSheetOpen, setTagSheetOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState(null);
   const [budgetInput, setBudgetInput] = useState((state.budget?.limit || 0).toString());
   const [tempPinned, setTempPinned] = useState(state.pinnedServices || ["expenses", "groceries"]);
+  const [tagName, setTagName] = useState("");
+  const [tagNameAr, setTagNameAr] = useState("");
+  const [tagColor, setTagColor] = useState("#6366f1");
+  const [tagStatuses, setTagStatuses] = useState("");
 
   const handleLangChange = (lang) => {
     setLang(lang);
@@ -97,6 +103,30 @@ export default function SettingsPage() {
     showToast("Footer updated", "success");
   };
 
+  const openTagEdit = (tag) => {
+    setEditingTag(tag);
+    setTagName(tag.name || "");
+    setTagNameAr(tag.nameAr || "");
+    setTagColor(tag.color || "#6366f1");
+    setTagStatuses((tag.statuses || []).join(", "));
+    setTagSheetOpen(true);
+  };
+
+  const saveTag = () => {
+    if (!tagName.trim()) { showToast("Name required", "error"); return; }
+    const updatedTag = {
+      ...editingTag,
+      name: tagName.trim(),
+      nameAr: tagNameAr.trim(),
+      color: tagColor,
+      statuses: tagStatuses.split(",").map(s => s.trim()).filter(Boolean),
+    };
+    updateTag(updatedTag);
+    setTagSheetOpen(false);
+    setEditingTag(null);
+    showToast("Category updated", "success");
+  };
+
   const handleExport = () => {
     const data = JSON.stringify(state, null, 2);
     const blob = new Blob([data], { type: "application/json" });
@@ -115,7 +145,6 @@ export default function SettingsPage() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        // Validate basic structure
         if (data.expenses && data.settings) {
           setSettings({ ...data.settings });
           showToast("Imported", "success");
@@ -179,21 +208,62 @@ export default function SettingsPage() {
       {/* Budget */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 13, color: "#606070", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("budget")}</h3>
-        <SettingRow label={t("monthlyBudget")} onClick={() => setBudgetSheetOpen(true)}>
+        <div onClick={() => setBudgetSheetOpen(true)} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)",
+          cursor: "pointer",
+        }}>
+          <span style={{ fontSize: 15, color: "#f0f0f5" }}>{t("monthlyBudget")}</span>
           <span style={{ color: "#a0a0b0", fontSize: 14 }}>
             {state.budget?.limit > 0 ? `${state.settings?.currency || "$"}${state.budget.limit}` : t("setBudget")}
           </span>
-        </SettingRow>
+        </div>
       </div>
 
       {/* Footer Services */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 13, color: "#606070", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("footerSlots")}</h3>
-        <SettingRow label={t("selectServices")} onClick={() => { setTempPinned(state.pinnedServices || ["expenses", "groceries"]); setPinSheetOpen(true); }}>
+        <div onClick={() => { setTempPinned(state.pinnedServices || ["expenses", "groceries"]); setPinSheetOpen(true); }} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)",
+          cursor: "pointer",
+        }}>
+          <span style={{ fontSize: 15, color: "#f0f0f5" }}>{t("selectServices")}</span>
           <span style={{ color: "#a0a0b0", fontSize: 14 }}>
             {(state.pinnedServices || ["expenses", "groceries"]).map(id => MODULES.find(m => m.id === id)?.name).join(", ")}
           </span>
-        </SettingRow>
+        </div>
+      </div>
+
+      {/* Manage Categories / Sub-groups */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 13, color: "#606070", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("manageTags")}</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {state.tags.map(tag => (
+            <div key={tag.id} onClick={() => openTagEdit(tag)} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "14px 16px", borderRadius: 14,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              cursor: "pointer", transition: "all 0.2s",
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: (tag.color || "#6366f1") + "20",
+                border: `1px solid ${(tag.color || "#6366f1")}40`,
+              }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#f0f0f5" }}>
+                  {rtl ? (tag.nameAr || tag.name) : tag.name}
+                </div>
+                <div style={{ fontSize: 11, color: "#606070" }}>
+                  {(tag.statuses || []).join(", ")}
+                </div>
+              </div>
+              <span style={{ color: "#a0a0b0", fontSize: 14 }}>✎</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Data */}
@@ -294,6 +364,42 @@ export default function SettingsPage() {
           color: "#fff", fontSize: 15, fontWeight: 700,
           border: "none", cursor: "pointer",
         }}>{t("save")}</button>
+      </BottomSheet>
+
+      {/* Edit Tag Sheet */}
+      <BottomSheet open={tagSheetOpen} onClose={() => setTagSheetOpen(false)} title={t("edit")}>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 13, color: "#606070", marginBottom: 6 }}>{t("optionNameEn")}</label>
+          <input value={tagName} onChange={e => setTagName(e.target.value)}
+            style={{ width: "100%", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#f0f0f5", fontSize: 15, boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 13, color: "#606070", marginBottom: 6 }}>{t("optionNameAr")}</label>
+          <input value={tagNameAr} onChange={e => setTagNameAr(e.target.value)}
+            style={{ width: "100%", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#f0f0f5", fontSize: 15, boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 13, color: "#606070", marginBottom: 6 }}>{t("color")}</label>
+          <input type="color" value={tagColor} onChange={e => setTagColor(e.target.value)}
+            style={{ width: 60, height: 44, borderRadius: 10, border: "none", background: "none" }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 13, color: "#606070", marginBottom: 6 }}>{t("statuses")} ({t("commaSeparated")})</label>
+          <input value={tagStatuses} onChange={e => setTagStatuses(e.target.value)}
+            style={{ width: "100%", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#f0f0f5", fontSize: 15, boxSizing: "border-box" }} />
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => { removeTag(editingTag.id); setTagSheetOpen(false); showToast("Deleted", "info"); }} style={{
+            flex: 1, padding: 14, borderRadius: 14,
+            background: "rgba(244,63,94,0.1)", color: "#f43f5e",
+            fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer",
+          }}>{t("delete")}</button>
+          <button onClick={saveTag} style={{
+            flex: 1, padding: 14, borderRadius: 14,
+            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            color: "#fff", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer",
+          }}>{t("save")}</button>
+        </div>
       </BottomSheet>
     </div>
   );
